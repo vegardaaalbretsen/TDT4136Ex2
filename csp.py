@@ -55,28 +55,51 @@ class CSP:
         # YOUR CODE HERE (and remove the assertion below)
         assert False, "Not implemented"
 
-    def backtracking_search(self) -> None | dict[str, Any]:
+    def backtracking_search(self) -> None | dict[str, Any]: 
         """Performs backtracking search on the CSP.
-        
+
         Returns
         -------
         None | dict[str, Any]
             A solution if any exists, otherwise None
         """
-        def backtrack(assignment: dict[str, Any]):
-            # TODO implement backtracking search
-            # STEP 1: Initialize
-            # STEP 2: Choose an unassigned variable
-            # STEP 3: Assign a value to the chosen variable
-            # STEP 4: Check if the assignment is consistent with the constraints
-            # STEP 5: If consistent, recursively call backtrack with the new assignment
-            # STEP 6: If the assignment is not consistent, or if further assignments do not lead 
-            #         to a solution, remove the assignment (backtrack) and try the next value
+        def _is_complete(assignment: dict[str, Any]) -> bool:
+            return all(v in assignment for v in self.variables)
 
-            
-            assert False, "Not implemented"
+        def _select_unassigned(assignment: dict[str, Any]) -> str:
+            for v in self.variables:
+                if v not in assignment:
+                    return v
+            raise RuntimeError("No unassigned variable found")
+
+        def _is_consistent(var: str, val: Any, assignment: dict[str, Any]) -> bool:
+            if val not in self.domains[var]:
+                return False
+            for n, nval in assignment.items():
+                allowed_ab = self.binary_constraints.get((var, n))
+                if allowed_ab is not None and (val, nval) not in allowed_ab:
+                    return False
+                allowed_ba = self.binary_constraints.get((n, var))
+                if allowed_ba is not None and (nval, val) not in allowed_ba:
+                    return False
+            return True
+
+        def backtrack(assignment: dict[str, Any]) -> None | dict[str, Any]:
+            if _is_complete(assignment):
+                return assignment
+            var = _select_unassigned(assignment)
+            for val in self.domains[var]:
+                if _is_consistent(var, val, assignment):
+                    assignment[var] = val
+                    result = backtrack(assignment)
+                    if result is not None:
+                        return result
+                    del assignment[var]
+            return None
 
         return backtrack({})
+    
+    
 
 
 def alldiff(variables: list[str]) -> list[tuple[str, str]]:
