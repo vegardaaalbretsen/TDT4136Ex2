@@ -1,5 +1,8 @@
 from typing import Any
 from queue import Queue
+import time
+from copy import deepcopy
+
 
 
 class CSP:
@@ -22,6 +25,14 @@ class CSP:
         """
         self.variables = variables
         self.domains = domains
+
+        self.ac3_runtime = 0.0
+        self.bt_runtime = 0.0
+        self.total_runtime = 0.0
+        self.bt_calls = 0
+        self.bt_failures = 0
+        self.domains_after_ac3: dict[str, set] | None = None
+
 
         # Binary constraints as a dictionary mapping variable pairs to a set of value pairs.
         #
@@ -52,6 +63,7 @@ class CSP:
         bool
             False if a domain becomes empty, otherwise True
         """
+        t0 = time.perf_counter()
         # Initialize queue
         queue = []
         for u, v in self.binary_constraints.keys():
@@ -65,6 +77,9 @@ class CSP:
             if self.revise(Xi,Xj):
                 if len(self.domains.get(Xi)) == 0:
         #       if size of Di = 0 then return false
+                    self.ac3_runtime = time.perf_counter() - t0
+                    self.domains_after_ac3 = deepcopy(self.domains)  
+                    self.total_runtime = self.ac3_runtime
                     return False
                 else:
         #       for each Xk in Xi.NEIGHBORS - {Xj} do
@@ -74,6 +89,9 @@ class CSP:
         #           add (Xk, Xi) to queue
                         queue.append((Xk,Xi))
         # return true
+        self.ac3_runtime = time.perf_counter() - t0
+        self.domains_after_ac3 = deepcopy(self.domains) 
+        self.total_runtime = self.ac3_runtime
         return True
     
     def revise(self, Xi, Xj):
@@ -143,6 +161,11 @@ class CSP:
             A complete assignment of variables to values if a solution exists,
             otherwise None.
         """
+        self.bt_calls = 0
+        self.bt_failures = 0
+        t0 = time.perf_counter()
+
+
         def _is_complete(assignment: dict[str, Any]) -> bool:
             """
             Checks if the assignment is complete (all variables assigned).
@@ -224,6 +247,7 @@ class CSP:
             None | dict[str, Any]
                 A complete assignment if a solution is found, otherwise None.
             """
+            self.bt_calls += 1
             if _is_complete(assignment):
                 return assignment
             var = _select_unassigned(assignment)
@@ -234,8 +258,12 @@ class CSP:
                     if result is not None:
                         return result
                     del assignment[var]
-            return None
 
+            self.bt_failures += 1
+            return None
+        
+        self.bt_runtime = time.perf_counter() - t0
+        self.total_runtime += self.bt_runtime
         return backtrack({})
     
     

@@ -18,9 +18,13 @@ def print_solution(solution):
         if row == 2 or row == 5:
             print('------+-------+------')
 
+def print_domain_sizes(domains, width=9):
+    for r in range(width):
+        print(" ".join(str(len(domains[f'X{r+1}{c+1}'])) for c in range(width)))
 
 # Choose Sudoku problem
-grid = open('sudoku_very_hard.txt').read().split()
+filename = 'sudoku_very_hard.txt'
+grid = open(filename).read().split()
 
 width = 9
 box_width = 3
@@ -54,9 +58,26 @@ csp = CSP(
     edges=edges,
 )
 
-print(csp.ac_3())
-print_solution(csp.backtracking_search())
+ok = csp.ac_3()
+print(ok)
 
+# (b) domains after AC-3
+print(f"Solving {filename}...")
+print("Domains after AC-3 (sizes):")
+print_domain_sizes(csp.domains_after_ac3, width)
+
+# (a,c,d,e)
+sol = csp.backtracking_search()
+print("Backtrack calls:", csp.bt_calls)
+print("Backtrack failures:", csp.bt_failures)
+print("Backtracking runtime (s):", f"{csp.bt_runtime:.6f}")
+print("AC-3 runtime (s):", f"{csp.ac3_runtime:.6f}")
+print("Total runtime (s):", f"{csp.total_runtime:.6f}")
+
+if sol is None:
+    print("No solution")
+else:
+    print_solution(sol)
 # Expected output after implementing csp.ac_3() and csp.backtracking_search():
 # True
 # 7 8 4 | 9 3 2 | 1 5 6
