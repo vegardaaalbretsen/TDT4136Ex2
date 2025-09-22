@@ -77,12 +77,23 @@ class CSP:
         return True
     
     def revise(self, Xi, Xj):
-        """Helper function for AC-3
+        """
+        Revises the domain of Xi to enforce consistency with Xj.
+
+        Removes values from Xi's domain that do not have any compatible value in Xj's domain
+        according to the binary constraints.
+
+        Parameters
+        ----------
+        Xi : str
+            The variable whose domain is to be revised.
+        Xj : str
+            The neighboring variable to check consistency against.
 
         Returns
         -------
         bool
-            True if we revise the domain of Xi
+            True if Xi's domain was revised (values removed), False otherwise.
         """
         # revised <- false
         revised = False
@@ -103,6 +114,19 @@ class CSP:
         return revised
     
     def neighbors(self, x: str) -> set[str]:
+        """
+        Returns the set of neighboring variables for a given variable.
+
+        Parameters
+        ----------
+        x : str
+            The variable whose neighbors are to be found.
+
+        Returns
+        -------
+        set[str]
+            The set of variables that share a binary constraint with x.
+        """
         nbrs = set()
         for (a, b) in self.binary_constraints.keys():
             if a == x: nbrs.add(b)
@@ -110,23 +134,68 @@ class CSP:
         return nbrs
 
     def backtracking_search(self) -> None | dict[str, Any]: 
-        """Performs backtracking search on the CSP.
+        """
+        Solves the CSP using recursive backtracking search.
 
         Returns
         -------
         None | dict[str, Any]
-            A solution if any exists, otherwise None
+            A complete assignment of variables to values if a solution exists,
+            otherwise None.
         """
         def _is_complete(assignment: dict[str, Any]) -> bool:
+            """
+            Checks if the assignment is complete (all variables assigned).
+
+            Parameters
+            ----------
+            assignment : dict[str, Any]
+                Current variable assignments.
+
+            Returns
+            -------
+            bool
+                True if all variables are assigned, False otherwise.
+            """
             return all(v in assignment for v in self.variables)
 
         def _select_unassigned(assignment: dict[str, Any]) -> str:
+            """
+            Selects an unassigned variable from the CSP.
+
+            Parameters
+            ----------
+            assignment : dict[str, Any]
+                Current variable assignments.
+
+            Returns
+            -------
+            str
+                An unassigned variable.
+            """
             for v in self.variables:
                 if v not in assignment:
                     return v
             raise RuntimeError("No unassigned variable found")
 
         def _is_consistent(var: str, val: Any, assignment: dict[str, Any]) -> bool:
+            """
+            Checks if assigning val to var is consistent with the current assignment.
+
+            Parameters
+            ----------
+            var : str
+                The variable to assign.
+            val : Any
+                The value to assign.
+            assignment : dict[str, Any]
+                Current variable assignments.
+
+            Returns
+            -------
+            bool
+                True if the assignment is consistent, False otherwise.
+            """
             if val not in self.domains[var]:
                 return False
             for n, nval in assignment.items():
@@ -139,6 +208,22 @@ class CSP:
             return True
 
         def backtrack(assignment: dict[str, Any]) -> None | dict[str, Any]:
+            """
+            Recursive helper for backtracking search.
+
+            Attempts to extend the assignment to a complete solution, backtracking
+            when necessary.
+
+            Parameters
+            ----------
+            assignment : dict[str, Any]
+                Current variable assignments.
+
+            Returns
+            -------
+            None | dict[str, Any]
+                A complete assignment if a solution is found, otherwise None.
+            """
             if _is_complete(assignment):
                 return assignment
             var = _select_unassigned(assignment)
