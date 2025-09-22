@@ -52,8 +52,62 @@ class CSP:
         bool
             False if a domain becomes empty, otherwise True
         """
-        # YOUR CODE HERE (and remove the assertion below)
-        assert False, "Not implemented"
+        # Initialize queue
+        queue = []
+        for u, v in self.binary_constraints.keys():
+            queue.append((u, v))
+            queue.append((v, u))
+        # While queue is not empty, do:
+        while len(queue) > 0:
+        #   (Xi, Xj) <- POP(queue)
+            Xi, Xj = queue.pop()
+        #   if Revise(csp, Xi, Xj) then
+            if self.revise(Xi,Xj):
+                if len(self.domains.get(Xi)) == 0:
+        #       if size of Di = 0 then return false
+                    return False
+                else:
+        #       for each Xk in Xi.NEIGHBORS - {Xj} do
+                    nbrs = self.neighbors(Xi)
+                    nbrs.remove(Xj)
+                    for Xk in nbrs:
+        #           add (Xk, Xi) to queue
+                        queue.append((Xk,Xi))
+        # return true
+        return True
+    
+    def revise(self, Xi, Xj):
+        """Helper function for AC-3
+
+        Returns
+        -------
+        bool
+            True if we revise the domain of Xi
+        """
+        # revised <- false
+        revised = False
+        allowed = self.binary_constraints.get((Xi,Xj)) or self.binary_constraints.get((Xj,Xi))
+        if allowed is None:
+            return False
+        # for each x in Di do
+        to_remove = set()
+        for x in set(self.domains.get(Xi)):
+        # if no value y in Dj allows (x,y) to satisfy the constraint between Xi and Xj, then 
+            if not any((x, y) in allowed for y in self.domains.get(Xj)):
+                to_remove.add(x)
+                    # delete x from Di
+        if to_remove:
+            self.domains.get(Xi).difference_update(to_remove)
+            revised = True
+        # return revised
+        return revised
+    
+    def neighbors(self, x: str) -> set[str]:
+        nbrs = set()
+        for (a, b) in self.binary_constraints.keys():
+            if a == x: nbrs.add(b)
+            if b == x: nbrs.add(a)
+        return nbrs
 
     def backtracking_search(self) -> None | dict[str, Any]: 
         """Performs backtracking search on the CSP.
